@@ -1,0 +1,1495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QD–WGM — Polymer-Coated Fiber Bottle Microresonator</title>
+<style>
+  :root{
+    --bg:#FFFFFF;
+    --ink:#0A0C0E;
+    --ink-soft:#3D4247;
+    --ink-faint:#5B6067;
+    --hair:#E7E9EC;
+    --panel:#FAFAFB;
+    --te:#2F4FE0;
+    --te-soft:#EEF1FD;
+    --tm:#C1652E;
+    --tm-soft:#FBF0E8;
+    --qd:#7A3FA0;
+    --qd-soft:#F3ECF8;
+    --warn:#B23A3A;
+    --ok:#1F8A5C;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", "JetBrains Mono", Consolas, monospace;
+    --sans: ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:var(--sans);}
+  .wrap{max-width:1360px;margin:0 auto;padding:28px 28px 40px;}
+
+  header{display:flex;align-items:baseline;justify-content:space-between;
+    border-bottom:1px solid var(--hair);padding-bottom:14px;margin-bottom:20px;flex-wrap:wrap;gap:10px;}
+  .mark{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;}
+  .mark .glyph{width:9px;height:9px;border-radius:50%;background:var(--qd);display:inline-block;}
+  h1{font-size:15px;font-weight:600;letter-spacing:.02em;margin:0;}
+  h1 b{font-weight:600;}
+  .mark small{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;color:var(--ink-faint);text-transform:uppercase;}
+  .view-toggle{display:flex;gap:2px;background:var(--panel);border-radius:6px;padding:2px;}
+  .view-toggle button{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+     background:transparent;border:none;color:var(--ink-soft);padding:5px 12px;border-radius:5px;cursor:pointer;}
+  .view-toggle button.active{background:var(--bg);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08);}
+
+  .stage{display:grid;grid-template-columns: 2.15fr 1fr;gap:26px;align-items:start;}
+  @media (max-width:980px){.stage{grid-template-columns:1fr;}}
+
+  .scope-frame{border:1px solid var(--hair);border-radius:10px;padding:0;overflow:hidden;background:var(--bg);}
+  canvas{display:block;width:100%;height:auto;background:var(--bg);}
+
+  .strips{display:grid;grid-template-columns:1fr;gap:1px;background:var(--hair);border-top:1px solid var(--hair);}
+  .strip{background:var(--bg);padding:10px 12px 12px;}
+  .strip .strip-label{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;}
+  .strip canvas{height:132px;}
+
+  .trace-toggle{display:flex;gap:8px;align-items:center;}
+  .trace-toggle label{display:flex;align-items:center;gap:3px;font-family:var(--mono);font-size:8.5px;letter-spacing:.03em;cursor:pointer;text-transform:none;}
+  .trace-toggle input{width:10px;height:10px;margin:0;cursor:pointer;}
+
+  /* controls */
+  .rack{display:flex;flex-direction:column;gap:0;border:1px solid var(--hair);border-radius:10px;padding:16px 18px;}
+  .section-label{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--ink-faint);margin:14px 0 6px;padding-top:10px;border-top:1px solid var(--hair);}
+  .section-label:first-child{margin-top:0;padding-top:0;border-top:none;}
+  .ctrl{padding:9px 0;}
+  .ctrl-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;}
+  .ctrl-row label{font-size:11.5px;color:var(--ink-soft);letter-spacing:.01em;}
+  .ctrl-row output{font-family:var(--mono);font-size:11.5px;color:var(--ink);}
+  .ctrl-row output.auto{color:var(--ink-faint);}
+  input[type=range]{width:100%;-webkit-appearance:none;appearance:none;height:2px;border-radius:1px;
+    background:var(--hair);outline:none;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:11px;height:11px;border-radius:50%;
+    background:var(--ink);border:2px solid var(--bg);cursor:pointer;box-shadow:0 0 0 1px var(--ink);margin-top:-4.5px;}
+  input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;background:var(--ink);
+    border:2px solid var(--bg);cursor:pointer;box-shadow:0 0 0 1px var(--ink);}
+
+  .btnrow{display:flex;gap:6px;}
+  .chip{flex:1;font-family:var(--mono);font-size:10px;letter-spacing:.04em;text-transform:uppercase;
+    padding:7px 4px;border-radius:7px;border:1px solid var(--hair);background:var(--bg);color:var(--ink-soft);cursor:pointer;text-align:center;}
+  .chip.active.te{background:var(--te-soft);border-color:var(--te);color:var(--te);}
+  .chip.active.tm{background:var(--tm-soft);border-color:var(--tm);color:var(--tm);}
+  .chip.active.qd{background:var(--qd-soft);border-color:var(--qd);color:var(--qd);}
+
+  .mini-btn{font-family:var(--mono);font-size:9.5px;letter-spacing:.04em;text-transform:uppercase;
+    padding:5px 10px;border-radius:6px;border:1px solid var(--hair);background:var(--bg);color:var(--ink-soft);cursor:pointer;white-space:nowrap;}
+  .mini-btn:hover{border-color:var(--ink-soft);color:var(--ink);}
+  .mini-btn.warn{color:var(--warn);}
+
+  /* readout */
+  .readout{margin-top:22px;border:1px solid var(--hair);border-radius:10px;padding:18px 20px;}
+  .readout-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;}
+  .ref-controls{display:flex;align-items:center;gap:8px;margin-left:auto;}
+  .ref-status{font-family:var(--mono);font-size:9px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);}
+  .grid8{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--hair);border:1px solid var(--hair);border-radius:8px;overflow:hidden;}
+  @media (max-width:820px){.grid8{grid-template-columns:repeat(2,1fr);}}
+  .stat{background:var(--bg);padding:10px 12px;}
+  .stat .stat-label{font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:4px;}
+  .stat .stat-val{font-family:var(--mono);font-size:13px;color:var(--ink);}
+  .stat .stat-sub{font-family:var(--mono);font-size:9.5px;color:var(--ink-faint);margin-top:2px;}
+
+  .delta-panel{display:none;}
+
+  /* signal chain */
+  .chain{display:flex;gap:0;border:1px solid var(--hair);border-radius:10px;padding:14px 8px;overflow-x:auto;}
+  .chain-stage{flex:1 0 108px;min-width:108px;text-align:center;padding:2px 10px;position:relative;}
+  .chain-stage:not(:last-child)::after{content:'→';position:absolute;right:-3px;top:13px;color:var(--hair);font-size:13px;}
+  .chain-label{font-family:var(--mono);font-size:8px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);white-space:nowrap;}
+  .chain-val{font-family:var(--mono);font-size:12.5px;color:var(--ink);margin-top:5px;}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="mark">
+      <span class="glyph"></span>
+      <h1><b>QD–WGM</b> — Polymer-Coated Fiber Bottle Microresonator</h1>
+    </div>
+    <div class="view-toggle">
+      <button id="btn-view-iso" class="active">Iso</button>
+      <button id="btn-view-side">Axial</button>
+    </div>
+  </header>
+
+  <div class="stage">
+    <div class="scope-frame">
+      <canvas id="mainCanvas" width="1000" height="560"></canvas>
+      <div class="strips">
+        <div class="strip">
+          <div class="strip-label">
+            <span>Spectrum</span><button class="mini-btn" id="btn-ray">View: Wave envelope</button>
+            <span class="trace-toggle">
+              <label><input type="checkbox" id="tg-T" checked><span style="color:var(--te)">T(λ)</span></label>
+              <label><input type="checkbox" id="tg-Iqd" checked><span style="color:var(--qd)">I_QD</span></label>
+              <label><input type="checkbox" id="tg-Icav" checked><span style="color:var(--ok)">I_cav</span></label>
+              <label><input type="checkbox" id="tg-Idet" checked><span style="color:var(--warn)">I_det</span></label>
+            </span>
+          </div>
+          <canvas id="specCanvas" width="960" height="264"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="rack">
+
+      <div class="section-label">Spectral window</div>
+      <div class="ctrl">
+        <div class="ctrl-row"><label>Window start / stop (nm)</label><output id="out-win"></output></div>
+        <div class="btnrow">
+          <input type="number" id="in-wmin" min="300" max="2000" step="1" value="880" class="chip" style="font-family:var(--mono);text-align:center;">
+          <input type="number" id="in-wmax" min="300" max="2000" step="1" value="920" class="chip" style="font-family:var(--mono);text-align:center;">
+        </div>
+      </div>
+      <div class="ctrl">
+        <div class="ctrl-row"><label>Benchmark preset (Zhou Li et al., Fig. 1b)</label><output id="out-preset" class="auto">custom</output></div>
+        <div class="btnrow">
+          <button class="chip" id="preset-a">a</button>
+          <button class="chip" id="preset-b">b</button>
+          <button class="chip" id="preset-c">c</button>
+          <button class="chip" id="preset-d">d</button>
+        </div>
+      </div>
+
+      <div class="section-label">Quantum dot</div>
+      <div class="ctrl">
+        <div class="ctrl-row"><label>QD emission λ_QD</label><output id="out-lqd"></output></div>
+        <input type="range" id="in-lqd" min="480" max="1000" step="1" value="900">
+      </div>
+      <div class="ctrl">
+        <div class="ctrl-row"><label>QD linewidth Δλ_QD</label><output id="out-dlqd"></output></div>
+        <input type="range" id="in-dlqd" min="0" max="100" step="1" value="45">
+      </div>
+      <div class="ctrl">
+        <div class="ctrl-row"><label>Radial depth in coating</label><output id="out-qdr"></output></div>
+        <input type="range" id="in-qdr" min="0" max="1" step="0.01" value="0.08">
+      </div>
+      <div class="ctrl">
+        <div class="ctrl-row"><label>Axial position z</label><output id="out-qdz"></output></div>
+        <input type="range" id="in-qdz" min="-1" max="1" step="0.01" value="0">
+      </div>
+      <div class="ctrl">
+        <div class="ctrl-row"><label>Azimuthal position φ</label><output id="out-qdphi"></output></div>
+        <input type="range" id="in-qdphi" min="0" max="360" step="1" value="0">
+      </div>
+      <div class="ctrl">
+        <div class="ctrl-row"><label>Dipole orientation μ</label></div>
+        <div class="btnrow">
+          <button class="chip qd active" id="btn-dip-r">Radial</button>
+          <button class="chip qd" id="btn-dip-t">Azimuthal</button>
+          <button class="chip qd" id="btn-dip-z">Axial</button>
+        </div>
+      </div>
+
+      <div class="section-label">WGM Resonator (Polymer-Coated Fiber)</div>
+      <div class="ctrl">
+        <div class="ctrl-row"><label>Core radius R</label><output id="out-R"></output></div>
+        <input type="range" id="in-R" min="15" max="65" step="0.5" value="50">
+      </div>
+      <div class="ctrl">
+        <div class="ctrl-row"><label>Polymer coating thickness t_coat</label><output id="out-tcoat"></output></div>
+        <input type="range" id="in-tcoat" min="1" max="10" step="0.2" value="3">
+      </div>
+      <div class="ctrl">
+        <div class="ctrl-row"><label>Bottle profile curvature ΔR_b</label><output id="out-curv"></output></div>
+        <input type="range" id="in-curv" min="0.1" max="5" step="0.1" value="1">
+      </div>
+      <div class="ctrl">
+        <div class="ctrl-row"><label>Polymer / coating index n_coat</label><output id="out-dn"></output></div>
+        <input type="range" id="in-dn" min="1.40" max="1.65" step="0.005" value="1.52">
+      </div>
+      <div class="ctrl">
+        <div class="ctrl-row"><label>Index n_eff</label><output id="out-n" class="auto"></output></div>
+      </div>
+      <div class="ctrl">
+        <div class="ctrl-row"><label>Radial order q</label><output id="out-q"></output></div>
+        <input type="range" id="in-q" min="1" max="3" step="1" value="1">
+      </div>
+      <div class="ctrl">
+        <div class="ctrl-row"><label>Axial bottle order l</label><output id="out-l"></output></div>
+        <input type="range" id="in-l" min="1" max="5" step="1" value="1">
+      </div>
+      <div class="ctrl">
+        <div class="ctrl-row"><label>Polarization</label></div>
+        <div class="btnrow">
+          <button class="chip te active" id="btn-te">TE</button>
+          <button class="chip tm" id="btn-tm">TM</button>
+        </div>
+      </div>
+
+      <div class="section-label">Fiber coupling</div>
+      <div class="ctrl">
+        <div class="ctrl-row"><label>Emitter-to-boundary distance d_surface</label><output id="out-dsurf"></output></div>
+        <input type="range" id="in-dsurf" min="0" max="300" step="1" value="20">
+      </div>
+      <div class="ctrl">
+        <div class="ctrl-row"><label>Axial taper ratio τ (out-coupling)</label><output id="out-taper"></output></div>
+        <input type="range" id="in-taper" min="1" max="10" step="0.05" value="2.8">
+      </div>
+      <div class="ctrl">
+        <div class="ctrl-row"><label>Q_e (external)</label><output id="out-qe" class="auto"></output></div>
+      </div>
+
+      <div class="section-label">Excitation</div>
+      <div class="ctrl">
+        <div class="ctrl-row"><label>Pump λ (non-resonant)</label><output id="out-pump" class="auto"></output></div>
+      </div>
+      <div class="ctrl">
+        <div class="ctrl-row"><label>Pump power</label><output id="out-power"></output></div>
+        <input type="range" id="in-power" min="0" max="100" step="1" value="45">
+      </div>
+
+      <div class="section-label">Cavity loss</div>
+      <div class="ctrl">
+        <div class="ctrl-row"><label>Surface roughness σ</label><output id="out-rough"></output></div>
+        <input type="range" id="in-rough" min="0.5" max="10" step="0.1" value="2">
+      </div>
+
+      <div class="section-label">Detection</div>
+      <div class="ctrl">
+        <div class="ctrl-row"><label>Setup collection efficiency</label><output id="out-collect"></output></div>
+        <input type="range" id="in-collect" min="0" max="100" step="1" value="30">
+      </div>
+    </div>
+  </div>
+
+  <div class="readout">
+    <div class="readout-head">
+      <div class="ref-controls">
+        <span class="ref-status" id="refStatus">no reference set</span>
+        <button class="mini-btn" id="btn-ref-set">Set reference</button>
+        <button class="mini-btn warn" id="btn-ref-clear">Clear</button>
+      </div>
+    </div>
+    <div class="grid8">
+      <div class="stat"><div class="stat-label">Cavity λ_res</div><div class="stat-val" id="s-lcav">—</div><div class="stat-sub" id="s-detune">—</div></div>
+      <div class="stat"><div class="stat-label">Mode indices (m approx.)</div><div class="stat-val" id="s-mql">—</div></div>
+      <div class="stat"><div class="stat-label">Q_loaded</div><div class="stat-val" id="s-qtot">—</div><div class="stat-sub" id="s-qbreak">—</div></div>
+      <div class="stat"><div class="stat-label">V_eff</div><div class="stat-val" id="s-veff">—</div></div>
+
+      <div class="stat"><div class="stat-label">κ / 2π (cavity)</div><div class="stat-val" id="s-kappa">—</div><div class="stat-sub" id="s-kappaie">—</div></div>
+      <div class="stat"><div class="stat-label">γ / 2π (QD)</div><div class="stat-val" id="s-gamma">—</div></div>
+      <div class="stat"><div class="stat-label">g / 2π (coupling)</div><div class="stat-val" id="s-g">—</div><div class="stat-sub" id="s-overlap">—</div></div>
+      <div class="stat"><div class="stat-label">Purcell F_P</div><div class="stat-val" id="s-fp">—</div></div>
+
+      <div class="stat"><div class="stat-label">Extraction η_e (fiber)</div><div class="stat-val" id="s-eta">—</div></div>
+      <div class="stat"><div class="stat-label">Coupling regime</div><div class="stat-val" id="s-cregime">—</div></div>
+      <div class="stat"><div class="stat-label">Detected rate</div><div class="stat-val" id="s-rate">—</div></div>
+      <div class="stat"><div class="stat-label">FSR</div><div class="stat-val" id="s-fsr">—</div></div>
+
+      <div class="stat"><div class="stat-label">Local field |E|² at QD</div><div class="stat-val" id="s-espatial">—</div></div>
+      <div class="stat"><div class="stat-label">dλ_res / dn_coat</div><div class="stat-val" id="s-dlambdadn">—</div></div>
+      <div class="stat"><div class="stat-label">Setup collection η</div><div class="stat-val" id="s-etacollect">—</div></div>
+    </div>
+
+    <div class="delta-panel" id="deltaPanel">
+      <div class="section-label" style="margin-top:16px;">Δ vs reference</div>
+      <div class="grid8" id="deltaGrid"></div>
+    </div>
+
+    <div class="chain" id="chainBar"></div>
+  </div>
+
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ===================== STATE ===================== */
+  const state = {
+    R:50, tcoat:3, curv:1, ncoat:1.52,      // µm, µm, µm, index
+    wmin:880, wmax:920,                     // spectral window, nm (configurable)
+    q:1, l:1, mode:'TE',
+    lqd:900, dlqd_pm: 45,                   // 0-100 slider mapped log to 0.01-10 nm
+    qdR:0.08, qdZ:0, qdPhi:180, dip:'r',     // φ=180°: emitter on the input-side coupling interface
+    dsurf:20, taper:2.8,                    // nm, taper ratio τ
+    power:45, rough:2, collectEff:30,
+    view:'iso',
+    reference:null,
+    rayView:false,                          // false = wave envelope (Airy rings), true = TIR ray path
+    traces:{T:true, Iqd:true, Icav:true, Idet:true},
+  };
+
+  const els = {};
+  ['R','tcoat','curv','dn','q','l','lqd','dlqd','qdr','qdz','qdphi','dsurf','taper','power','rough','collect'].forEach(k=>{
+    els[k]=document.getElementById('in-'+k);
+    els['out'+k]=document.getElementById('out-'+k);
+  });
+  els.outn = document.getElementById('out-n');
+  els.outqe = document.getElementById('out-qe');
+  els.outpump = document.getElementById('out-pump');
+
+  const chips = {
+    te: document.getElementById('btn-te'), tm: document.getElementById('btn-tm'),
+    dipR: document.getElementById('btn-dip-r'), dipT: document.getElementById('btn-dip-t'), dipZ: document.getElementById('btn-dip-z'),
+    viewIso: document.getElementById('btn-view-iso'), viewSide: document.getElementById('btn-view-side'),
+  };
+
+  function fmt(v, d){ if(v===undefined||v===null||!isFinite(v)) return '—'; return Number(v).toLocaleString(undefined,{maximumFractionDigits:d===undefined?2:d}); }
+  function fmtSci(v){
+    if(!isFinite(v)) return '—';
+    if(v===0) return '0';
+    const e = Math.floor(Math.log10(Math.abs(v)));
+    const m = v/Math.pow(10,e);
+    return m.toFixed(2)+'e'+(e>=0?'+':'')+e;
+  }
+
+  /* ===================== PHYSICAL CONSTANTS ===================== */
+  const C = 299792458;
+  const HBAR = 1.054571817e-34;
+  const EPS0 = 8.8541878128e-12;
+  const AIRY_ZEROS = [2.3381, 4.0879, 5.5206];
+  const N_AMB = 1.0;                // ambient index
+  const L_BOTTLE_NM = 5000;         // assumed bottle axial length, sets mode volume
+  const DIPOLE_MOMENT = 2.6e-29;    // C·m, order-of-magnitude InAs/GaAs QD exciton dipole
+  const GAMMA0_RAD = 1/(1e-9);      // 1 ns spontaneous radiative lifetime baseline
+  const P_SAT_UW = 20;              // pump saturation power, µW
+  const ALPHA_SI_CM = 0.002;        // fused-silica bulk loss, cm^-1
+  const ALPHA_POLY_CM = 0.02;       // optical polymer loss, cm^-1
+  const ENV_FWHM_NM = 10;           // broad QD emission envelope FWHM (schematic), nm
+  const DLAM_MIN_VIS = 0.04;        // nm, min drawn half-width so sub-pixel peaks stay visible
+  const PX_PER_UM = 2.2;            // canvas scale for fiber geometry
+  const TSQ = 0.32;                 // transverse-ring projection squash (iso view)
+  const SRC_X0 = 20, SRC_X1 = 120;  // quantum source block, px
+  const XL = 335, XR = 880;         // fiber core span (iso), px
+  const DET_X = 944;                // detector aperture, px
+  const CX = 505, CY = 280;         // bottle centre (iso) and fiber centre (axial), px
+  const LHALF = 150;                // iso bottle half-length, px
+  const INPUT_SPEED = 300, GUIDE_SPEED = 260;   // photon travel speeds, px/s
+  const N_BOUNCE = 6;               // chord reflections per circuit: Δθ = 2π/N, θi = π/2 − π/N
+  const SPEC_YMAX = 15000;          // intensity axis full scale, a.u.
+
+  // fused silica Sellmeier (Malitson); C_i in µm
+  const SILICA_B = [0.6961663, 0.4079426, 0.8974794];
+  const SILICA_C = [0.0684043, 0.1162414, 9.896161];
+  function nSilica(lambda_nm){
+    const l2 = Math.pow(lambda_nm/1000, 2);
+    let s = 1;
+    for(let i=0;i<3;i++) s += SILICA_B[i]*l2/(l2 - SILICA_C[i]*SILICA_C[i]);
+    return Math.sqrt(s);
+  }
+
+  /* dlqd slider (0-100) -> QD linewidth in nm, log mapped 0.01–10 nm */
+  function dlqdFromSlider(s){ return 0.01*Math.pow(1000, s/100); }
+  /* power slider (0-100) -> pump power in µW, log mapped 1–1000 */
+  function powerFromSlider(s){ return 1*Math.pow(1000, s/100); }
+  function lorentzN(lam, c, hw){ const x=(lam-c)/(hw||0.0001); return 1/(1+x*x); }
+  /* broad QD emission envelope (schematic), peak 0.3 at λ_QD */
+  function emitterEnv(lam, lqd){
+    const x = (lam-lqd)/(ENV_FWHM_NM/2);
+    return 0.3*Math.exp(-Math.LN2*x*x);
+  }
+
+  /* polarization/dipole overlap lookup (approximate) */
+  const POL_OVERLAP = {
+    TE: { r:0.30, t:1.00, z:0.12 },   // TE: field mainly tangential
+    TM: { r:0.85, t:0.20, z:0.65 },   // TM: strong radial + axial components
+  };
+
+  /* ===================== FIELD SHAPE FUNCTIONS =====================
+     Shared by physics (overlaps) and renderer. */
+  function azimuthalProfile(theta, m){
+    return Math.pow(Math.cos(m*theta/2), 2);
+  }
+  function radialProfile(u, q){
+    const decay = Math.exp(-u*u*4.5);
+    const osc = Math.pow(Math.cos((q-0.5)*Math.PI*u), 2);
+    return decay*osc;
+  }
+  function axialProfile(zFrac, l){
+    return Math.abs(Math.cos(l*Math.PI*zFrac/2));
+  }
+
+  /* ===================== FIBER / BOTTLE WGM MODEL ===================== */
+  // evanescent decay length of the WGM field in the coating, nm
+  function evanDecayNm(lambda_nm, n){
+    return lambda_nm/(2*Math.PI*Math.sqrt(Math.max(n*n-N_AMB*N_AMB,0.01)));
+  }
+  // fraction of mode energy inside the polymer coating
+  function coatingFraction(lambda_nm, s){
+    return 1 - Math.exp(-2*s.tcoat*1000/evanDecayNm(lambda_nm, s.ncoat));
+  }
+  function nEff(lambda_nm, s){
+    const ns = nSilica(lambda_nm);
+    return ns + coatingFraction(lambda_nm, s)*(s.ncoat - ns);
+  }
+  // continuous azimuthal order m(λ) from the cylindrical asymptotic expansion (spec form)
+  function airyM(lambda_nm, s, q){
+    const Rres = (s.R + s.tcoat)*1000;
+    const nEf = nEff(lambda_nm, s);
+    const x = 2*Math.PI*Rres*s.ncoat/lambda_nm;
+    const alpha = AIRY_ZEROS[q-1];
+    const P = s.mode==='TE' ? 1 : 1/(nEf*nEf);
+    return x - alpha*Math.cbrt(x/2)
+           + P*nEf/Math.sqrt(Math.max(nEf*nEf-N_AMB*N_AMB, 0.01))
+           + 3*alpha*alpha/(20*Math.pow(x/2, 2/3));
+  }
+  // all resonances m (integer) of radial order q inside the fixed window; λ by bisection
+  function solveResonances(s, q){
+    const gLo = airyM(s.wmin, s, q);      // largest m (m decreases with λ)
+    const gHi = airyM(s.wmax, s, q);
+    const out = [];
+    for(let m=Math.ceil(gHi); m<=Math.floor(gLo) && out.length<400; m++){
+      let lo=s.wmin, hi=s.wmax;
+      for(let it=0; it<50; it++){
+        const mid=(lo+hi)/2;
+        if(airyM(mid, s, q) > m) lo=mid; else hi=mid;
+      }
+      out.push({m, lam:(lo+hi)/2});
+    }
+    return out;
+  }
+  // full detail for one mode: base resonance lam0 of (q,m) plus axial sub-peak a
+  function modeDetail(s, lam0, q, a, m){
+    const Rres = (s.R + s.tcoat)*1000;                          // resonance radius, nm
+    const fsr0 = lam0*lam0/(2*Math.PI*nEff(lam0, s)*Rres);       // FSR, nm
+    const lam = lam0 + a*fsr0*Math.sqrt(2*s.curv/(s.R + s.tcoat)); // axial sub-peak offset, nm
+    const nEf = nEff(lam, s);
+    const omega = 2*Math.PI*C/(lam*1e-9);
+    const x = 2*Math.PI*Rres*s.ncoat/lam;
+    const delta = evanDecayNm(lam, s.ncoat);
+    const Gam = coatingFraction(lam, s);
+    const FSR = lam*lam/(2*Math.PI*nEf*Rres);
+
+    /* --- Q budget: rad, silica, polymer, scattering --- */
+    const Q_rad = Math.min(1e9, 300*Math.pow(1.35, x/8));
+    const lamCm = lam*1e-7;
+    const Q_si = 2*Math.PI*nEf/(lamCm*ALPHA_SI_CM);
+    const Q_poly = 2*Math.PI*nEf/(lamCm*ALPHA_POLY_CM);
+    const Q_abs = 1/(Gam/Q_poly + (1-Gam)/Q_si);
+    const Q_scat = 4e6*Math.pow(lam/900, 2)/Math.pow(s.rough/2, 2);
+    const Q_i = 1/(1/Q_rad + 1/Q_abs + 1/Q_scat);
+    const eta_gap = Math.exp(-(1000/s.taper)/(delta/2));
+    const Q_e = 6000/Math.max(eta_gap, 0.0004);
+    const Q_total = 1/(1/Q_i + 1/Q_e);
+    const kappa_total = omega/Q_total, kappa_i = omega/Q_i, kappa_e = omega/Q_e;
+    const linewidth_nm = lam/Q_total;
+    const T0 = Math.pow((kappa_i-kappa_e)/(kappa_i+kappa_e), 2);
+    const eta_e = kappa_e/kappa_total;
+
+    /* --- mode volume: radial = evanescent scale, axial = bottle length --- */
+    const V_eff_nm3 = 2*Math.PI*Rres*delta*L_BOTTLE_NM;
+    const V_eff_m3 = V_eff_nm3*1e-27;
+
+    /* --- QD spatial + polarization overlap --- */
+    const S_r = radialProfile(s.qdR, q);
+    const S_z = axialProfile(s.qdZ, a+1);
+    const S_phi = azimuthalProfile(s.qdPhi*Math.PI/180, m);
+    const S_evan = Math.exp(-2*s.dsurf/delta);
+    const pol = POL_OVERLAP[s.mode];
+    const S_p = s.dip==='r' ? pol.r : s.dip==='t' ? pol.t : pol.z;
+    const S_spatial = Math.max(0, Math.min(1, S_r*S_z*S_phi*S_evan));
+    const overlap = Math.max(0, Math.min(1, S_r*S_z*S_p*S_phi*S_evan));
+
+    /* --- coupling g --- */
+    const E_vac = Math.sqrt((HBAR*omega)/(2*EPS0*nEf*nEf*Math.max(V_eff_m3, 1e-25)));
+    const g_max = DIPOLE_MOMENT*E_vac/HBAR;
+    const g = g_max*overlap;
+
+    /* --- Purcell, spectrally reduced by QD-cavity detuning --- */
+    const lamM = lam*1e-9;
+    const Fp_max = (3/(4*Math.PI*Math.PI))*Math.pow(lamM/nEf, 3)*(Q_total/Math.max(V_eff_m3, 1e-25));
+    const detuning_nm = s.lqd - lam;
+    const detuning_omega = 2*Math.PI*C*detuning_nm*1e-9/Math.pow(lamM, 2);
+    const S_spec = 1/(1+Math.pow(2*detuning_omega/kappa_total, 2));
+    const Fp = Fp_max*overlap*S_spec;
+    const beta = Fp/(Fp+1);
+
+    return {
+      lambda_cav: lam, m, q, a, l: a+1, n_eff: nEf, x, omega, delta, Gam, FSR,
+      Q_rad, Q_si, Q_poly, Q_abs, Q_scat, Q_i, Q_e, Q_total,
+      kappa_total, kappa_i, kappa_e, linewidth_nm, finesse: FSR/linewidth_nm, T0, eta_e, eta_gap,
+      V_eff_um3: V_eff_nm3*1e-9, V_eff_m3,
+      S_r, S_z, S_phi, S_p, S_evan, S_spatial, overlap,
+      g_max, g, Fp_max, Fp, S_spec, beta, detuning_nm,
+    };
+  }
+
+  function computePhysics(s){
+    const aMax = Math.max(2, s.l-1);
+    const modes = [];
+    for(let q=1; q<=3; q++){
+      for(const r of solveResonances(s, q)){
+        for(let a=0; a<=aMax; a++) modes.push(modeDetail(s, r.lam, q, a, r.m));
+      }
+    }
+
+    // selected mode: family (q, l) member nearest the QD line
+    let sel = null;
+    for(const md of modes){
+      if(md.q!==s.q || md.a!==s.l-1) continue;
+      if(!sel || Math.abs(md.lambda_cav-s.lqd) < Math.abs(sel.lambda_cav-s.lqd)) sel = md;
+    }
+    if(!sel) sel = modes.reduce((b,md)=> Math.abs(md.lambda_cav-s.lqd) < Math.abs(b.lambda_cav-s.lqd) ? md : b);
+
+    const dlqd_nm = dlqdFromSlider(s.dlqd_pm);
+    const gamma = 2*Math.PI*C*(dlqd_nm*1e-9)/Math.pow(s.lqd*1e-9, 2);
+    const pump_uW = powerFromSlider(s.power);
+    const P_exc = pump_uW/(pump_uW+P_SAT_UW);
+    const R_qd_total = P_exc*GAMMA0_RAD;
+    const eta_collect = Math.min(1, Math.max(0, (s.collectEff||0)/100));
+    const beta = sel.beta;
+    const rate_into_cavity = R_qd_total*beta;
+    const rate_fiber = rate_into_cavity*sel.eta_e;
+    const rate_collected = rate_fiber*eta_collect;
+    const n_ss = rate_into_cavity/sel.kappa_total;
+
+    // per-mode spectral data for the comb plot
+    const specModes = modes.map(md=>({
+      lam: md.lambda_cav, q: md.q, a: md.a, m: md.m,
+      hw: Math.max(md.linewidth_nm/2, DLAM_MIN_VIS),
+      T0: md.T0,
+      // emission weight: broad envelope × per-mode peak-height spread (deterministic, 0.4–1)
+      amp: emitterEnv(md.lambda_cav, s.lqd) * (0.4 + 0.6*hash01(md.m*1.31 + md.q*17.7 + md.a*5.3)) / (md.q*(1+md.a)),
+      asym: 0.35*(2*hash01(md.m*0.73 + md.q*11.1 + md.a*2.9) - 1),   // peak asymmetry
+      det: emitterEnv(md.lambda_cav, s.lqd) * (0.4 + 0.6*hash01(md.m*1.31 + md.q*17.7 + md.a*5.3)) / (md.q*(1+md.a)) * md.eta_e * eta_collect,
+    }));
+
+    let regime='critical', regimePos=0.5;
+    const ratio = sel.Q_e/sel.Q_i;
+    if (ratio > 1.3){ regime='under-coupled'; regimePos = Math.max(0, 0.5 - Math.min(0.5,(ratio-1.3)/6)); }
+    else if (ratio < 0.7){ regime='over-coupled'; regimePos = Math.min(1, 0.85); }
+    else { regimePos = Math.min(0.65,Math.max(0.35, 0.35+(1.3-ratio)/0.6*0.3)); }
+
+    const strong = (4*sel.g) > (sel.kappa_total+gamma);
+
+    return Object.assign({}, sel, {
+      lqd: s.lqd, wmin: s.wmin, wmax: s.wmax, dlqd_nm, gamma, pump_uW, P_exc, R_qd_total, eta_collect,
+      beta, rate_into_cavity, rate_fiber, rate_collected, n_ss,
+      regime, regimePos, strong, specModes, omega_cav: sel.omega,
+    });
+  }
+
+  /* ===================== CANVAS SETUP ===================== */
+  const mainCanvas = document.getElementById('mainCanvas');
+  const mctx = mainCanvas.getContext('2d');
+  const W = mainCanvas.width, H = mainCanvas.height;
+
+  const specCanvas = document.getElementById('specCanvas'); const sctx = specCanvas.getContext('2d');
+
+  /* ===================== GEOMETRY HELPERS ===================== */
+  // axial bulge: 0 at bottle ends, 1 at centre
+  function bulge(x){ const u=(x-CX)/LHALF; return u*u<1 ? (1-u*u) : 0; }
+  function rCoreAt(x){ return (state.R + state.curv*bulge(x))*PX_PER_UM; }
+  function rCoatAt(x){ return rCoreAt(x) + state.tcoat*PX_PER_UM; }
+  function qdGeom(){
+    const xQD = CX + state.qdZ*LHALF*0.9;
+    const rCoat = rCoatAt(xQD);
+    const rQD = rCoat - state.qdR*state.tcoat*PX_PER_UM;   // surface → core interface
+    return {xQD, rCoat, rQD};
+  }
+  function modeRGB(){ return state.mode==='TE' ? '47,79,224' : '193,101,46'; }
+
+  /* ===================== CAVITY FIELD STRENGTH (display) ===================== */
+  let fieldEnergy = 0;
+  function stepFieldEnergy(dt, phys){
+    const target = Math.min(8, Math.log10(phys.n_ss+1)*3.2);
+    fieldEnergy += dt*(target - fieldEnergy)/0.5;
+    if(fieldEnergy<0) fieldEnergy=0;
+  }
+
+  /* ===================== SEMICLASSICAL PHOTON PROPAGATION (overlay) ===================== */
+  let particles = [];
+  const MAX_PARTICLES = 60;
+  let spawnAccumulator = 0;
+
+  // photon lifecycle: input → WGM orbit → core guided → detector
+  let pulseFlash = 0;     // source pulse glow, 0..1
+  let detFlash = 0;       // detector trigger glow, 0..1
+
+  function arrivalPoint(qg){ return { x: qg.xQD - qg.rCoat*TSQ, y: CY }; }   // leftmost orbit point = coupling interface
+
+  // TIR polygon: N chord bounces per circuit; vertices on the coating surface, vertex 0 = coupling point
+  function bounceVertex(qg, k){
+    const th = Math.PI + k*2*Math.PI/N_BOUNCE;
+    return { x: qg.xQD + qg.rCoat*TSQ*Math.cos(th), y: CY + qg.rCoat*Math.sin(th) };
+  }
+  let sparks = [];        // reflection flashes at bounce points
+
+  function spawnFromSource(){
+    particles.push({ kind:'input', x:SRC_X1, y:CY, alpha:1 });
+    pulseFlash = 1;
+  }
+
+  function updateParticles(dt, phys){
+    const qg = qdGeom();
+    const arr = arrivalPoint(qg);
+
+    const spawnRate = Math.min(3.5, 0.15 + Math.log10(phys.rate_into_cavity+2)*0.5);
+    spawnAccumulator += dt*spawnRate;
+    while(spawnAccumulator>1 && particles.length<MAX_PARTICLES){ spawnFromSource(); spawnAccumulator-=1; }
+    pulseFlash = Math.max(0, pulseFlash - dt*3);
+    detFlash = Math.max(0, detFlash - dt*3);
+
+    const energyNorm = Math.min(1, fieldEnergy/6);
+    const chordTime = 0.22/(1+0.5*energyNorm);     // seconds per chord
+    const lifetime_s = Math.min(3.5, 0.35 + phys.finesse*0.03);
+    const p_escape = 1-Math.exp(-dt/lifetime_s);
+
+    for(let i=sparks.length-1;i>=0;i--){ sparks[i].t += dt; if(sparks[i].t>0.25) sparks.splice(i,1); }
+
+    for(let i=particles.length-1;i>=0;i--){
+      const p = particles[i];
+      if(p.kind==='input'){                                    // stage 1: travel along input axis
+        p.x += INPUT_SPEED*dt;
+        if(p.x >= arr.x){                                      // stage 2: enter WGM orbit at vertex 0
+          p.x = arr.x; p.y = CY; p.kind='circulating';
+          p.k = 0; p.frac = 0; p.sign = Math.random()<0.5 ? 1 : -1;
+        }
+      } else if(p.kind==='circulating'){
+        // discrete chord travel between TIR reflection vertices
+        p.frac += dt/chordTime;
+        while(p.frac>=1){
+          p.frac -= 1;
+          p.k = (p.k + p.sign + N_BOUNCE) % N_BOUNCE;
+          const v = bounceVertex(qg, p.k);
+          sparks.push({x:v.x, y:v.y, t:0});                    // reflection flash
+        }
+        const a = bounceVertex(qg, p.k), b = bounceVertex(qg, (p.k + p.sign + N_BOUNCE) % N_BOUNCE);
+        p.x = a.x + (b.x-a.x)*p.frac; p.y = a.y + (b.y-a.y)*p.frac;
+        const pt = {x:p.x, y:p.y};
+        if(Math.random() < p_escape){
+          if(Math.random() < phys.eta_e){                      // stage 3: transfer into fiber core mode
+            p.kind='guided'; p.t=0; p.startY=pt.y;
+          } else {
+            p.kind='lost'; p.t=0;                              // off-channel loss: fade in place
+          }
+        }
+      } else if(p.kind==='guided'){
+        p.t += dt;
+        p.y = p.startY + (CY - p.startY)*Math.min(1, p.t/0.15);
+        p.x += GUIDE_SPEED*dt;
+        if(p.x >= XR){ p.x = XR; p.y = CY; p.kind='toDet'; }
+      } else if(p.kind==='toDet'){                             // stage 4: into detector aperture
+        p.x += GUIDE_SPEED*dt;
+        if(p.x >= DET_X){ p.x = DET_X; p.kind='absorbed'; p.t=0; detFlash = 1; }
+      } else if(p.kind==='absorbed'){
+        p.t += dt; p.alpha = 1 - p.t/0.25;
+        if(p.alpha<=0) particles.splice(i,1);
+      } else if(p.kind==='lost'){
+        p.t += dt; p.alpha -= 2.5*dt;
+        if(p.alpha<=0) particles.splice(i,1);
+      }
+    }
+  }
+
+  // rounded-rect path (no fill/stroke)
+  function boxPath(x, y, w, h, r){
+    mctx.beginPath();
+    mctx.moveTo(x+r,y); mctx.arcTo(x+w,y,x+w,y+h,r); mctx.arcTo(x+w,y+h,x,y+h,r);
+    mctx.arcTo(x,y+h,x,y,r); mctx.arcTo(x,y,x+w,y,r); mctx.closePath();
+  }
+  // fiber outline polygon appended to the current path (top edge then bottom edge)
+  function addFiberPath(rFn){
+    const N = 160;
+    for(let i=0;i<=N;i++){ const x=XL+(XR-XL)*i/N; const r=rFn(x); if(i===0) mctx.moveTo(x,CY-r); else mctx.lineTo(x,CY-r); }
+    for(let i=N;i>=0;i--){ const x=XL+(XR-XL)*i/N; mctx.lineTo(x,CY+rFn(x)); }
+    mctx.closePath();
+  }
+
+  /* ===================== ISOMETRIC VIEW (horizontal fiber bottle) ===================== */
+  function drawIso(phys){
+    mctx.clearRect(0,0,W,H);
+
+    const energyNorm = Math.min(1, fieldEnergy/6);
+    const mc = modeRGB();
+    const qg = qdGeom();
+    const qdTheta = state.qdPhi*Math.PI/180;
+    const l = state.l, m = phys.m, q = state.q;
+
+    // cavity glow around the bottle waist
+    if(energyNorm>0.03){
+      mctx.save();
+      const gg = mctx.createRadialGradient(CX,CY,LHALF*0.2,CX,CY,LHALF*1.3);
+      gg.addColorStop(0, `rgba(${mc},${0.14*energyNorm})`); gg.addColorStop(1, `rgba(${mc},0)`);
+      mctx.fillStyle = gg; mctx.fillRect(CX-LHALF*1.5, CY-200, LHALF*3, 400);
+      mctx.restore();
+    }
+
+    // containers (Fig. 1a palette): source = salmon, microcavity = cyan, detection = green
+    const topR0 = rCoatAt(CX);
+    boxPath(20, 200, 100, 160, 10);       mctx.fillStyle = '#FBE3DC'; mctx.fill(); mctx.strokeStyle = '#D98B7A'; mctx.lineWidth = 1.2; mctx.stroke();
+    boxPath(CX-LHALF-40, CY-topR0-26, 2*LHALF+80, 2*topR0+52, 12); mctx.fillStyle = 'rgba(200,236,244,0.55)'; mctx.fill(); mctx.strokeStyle = '#5AB4C5'; mctx.lineWidth = 1.2; mctx.stroke();
+    boxPath(896, 200, 92, 160, 10);       mctx.fillStyle = '#DDF3E4'; mctx.fill(); mctx.strokeStyle = '#4FA876'; mctx.lineWidth = 1.2; mctx.stroke();
+
+    // fiber: coating (hatched annulus), then core (hatched)
+    mctx.save();
+    mctx.beginPath(); addFiberPath(rCoatAt);
+    mctx.fillStyle = '#F4F6FB'; mctx.fill('evenodd');
+    mctx.beginPath(); addFiberPath(rCoatAt); addFiberPath(rCoreAt); mctx.clip('evenodd');
+    mctx.beginPath();
+    for(let k=-600;k<1200;k+=7){ mctx.moveTo(XL+k, CY-300); mctx.lineTo(XL+k+600, CY+300); }
+    mctx.strokeStyle = 'rgba(90,120,170,0.30)'; mctx.lineWidth = 0.8; mctx.stroke();
+    mctx.restore();
+
+    mctx.save();
+    mctx.beginPath(); addFiberPath(rCoreAt); mctx.clip();
+    mctx.fillStyle = '#E9ECF1'; mctx.fillRect(XL-5, CY-200, XR-XL+10, 400);
+    mctx.beginPath();
+    for(let k=-600;k<1200;k+=7){ mctx.moveTo(XL+k, CY+300); mctx.lineTo(XL+k+600, CY-300); }
+    mctx.strokeStyle = 'rgba(91,96,103,0.35)'; mctx.lineWidth = 0.8; mctx.stroke();
+    mctx.restore();
+
+    mctx.save();
+    mctx.beginPath(); addFiberPath(rCoatAt); mctx.lineWidth = 1.2; mctx.strokeStyle = '#1A1D21'; mctx.stroke();
+    mctx.beginPath(); addFiberPath(rCoreAt); mctx.lineWidth = 1; mctx.strokeStyle = '#5B6067'; mctx.stroke();
+    for(const xe of [XL, XR]){
+      const r = rCoatAt(xe);
+      mctx.beginPath(); mctx.ellipse(xe, CY, r*TSQ, r, 0, 0, Math.PI*2);
+      mctx.fillStyle = '#FCFCFD'; mctx.fill(); mctx.strokeStyle = '#1A1D21'; mctx.lineWidth = 1.2; mctx.stroke();
+    }
+    mctx.restore();
+
+
+    // WGM transverse rings at the coating surface, axial envelope cos(l·π·z/2)
+    const nRings = 3 + 2*l;
+    const Nvis = Math.max(6, Math.min(48, m));       // visual lobe count (schematic, not m)
+    for(let k=0; k<nRings; k++){
+      const z = nRings===1 ? 0 : (2*k/(nRings-1)) - 1;
+      const x = CX + z*LHALF*0.9;
+      const rc = rCoatAt(x);
+      const axAmp = Math.abs(Math.cos(l*Math.PI*z/2));
+      if(axAmp*energyNorm < 0.02) continue;
+      if(state.rayView){
+        // TIR chord polygon on this ring; normals + reflected rays at each bounce point
+        const isQDring = Math.abs(x - qg.xQD) < 1;
+        mctx.save();
+        mctx.lineCap = 'round';
+        for(let k=0;k<N_BOUNCE;k++){
+          const a = bounceVertex({xQD:x, rCoat:rc}, k), b = bounceVertex({xQD:x, rCoat:rc}, k+1);
+          mctx.beginPath(); mctx.moveTo(a.x,a.y); mctx.lineTo(b.x,b.y);
+          mctx.strokeStyle = `rgba(${mc},${0.15+0.75*axAmp*energyNorm})`;
+          mctx.lineWidth = 1+2.2*axAmp*energyNorm; mctx.stroke();
+          if(isQDring){
+            // outward normal at vertex a (projected unit normal)
+            const th = Math.PI + k*2*Math.PI/N_BOUNCE;
+            let nx = TSQ*Math.cos(th), ny = Math.sin(th); const nl = Math.hypot(nx,ny); nx/=nl; ny/=nl;
+            mctx.setLineDash([2,2]); mctx.strokeStyle = 'rgba(90,96,103,0.8)'; mctx.lineWidth = 0.9;
+            mctx.beginPath(); mctx.moveTo(a.x,a.y); mctx.lineTo(a.x+nx*16, a.y+ny*16); mctx.stroke();
+            mctx.setLineDash([]);
+            // reflected ray: incoming chord direction mirrored about the normal
+            const prev = bounceVertex({xQD:x, rCoat:rc}, k-1+N_BOUNCE);
+            let dx = a.x-prev.x, dy = a.y-prev.y; const dl2 = Math.hypot(dx,dy); dx/=dl2; dy/=dl2;
+            const dot = dx*nx + dy*ny;
+            const rx = dx - 2*dot*nx, ry = dy - 2*dot*ny;
+            mctx.setLineDash([3,3]); mctx.strokeStyle = `rgba(${mc},0.7)`; mctx.lineWidth = 1;
+            mctx.beginPath(); mctx.moveTo(a.x,a.y); mctx.lineTo(a.x+rx*18, a.y+ry*18); mctx.stroke();
+            mctx.setLineDash([]);
+          }
+        }
+        mctx.restore();
+        continue;
+      }
+      const steps = 160;
+      mctx.save();
+      for(let i=0;i<steps;i++){
+        const th0=(i/steps)*Math.PI*2, th1=((i+1)/steps)*Math.PI*2, thm=(th0+th1)/2;
+        const inten = axAmp*azimuthalProfile(thm, Nvis);
+        mctx.beginPath(); mctx.ellipse(x, CY, rc*TSQ, rc, 0, th0, th1);
+        mctx.strokeStyle = `rgba(${mc},${0.08+0.7*inten*energyNorm})`;
+        mctx.lineWidth = 1+3*inten*energyNorm;
+        mctx.stroke();
+      }
+      if(state.mode==='TM'){
+        for(let i=0;i<Nvis;i++){
+          const th=(i/Nvis)*Math.PI*2;
+          const amp = axAmp*azimuthalProfile(th, Nvis);
+          if(amp*energyNorm < 0.04) continue;
+          const px = x + rc*TSQ*Math.cos(th), py = CY + rc*Math.sin(th);
+          const len = 3 + 10*amp*energyNorm;
+          mctx.strokeStyle = `rgba(${mc},${0.3+0.6*amp*energyNorm})`;
+          mctx.lineWidth = 1.3;
+          mctx.beginPath(); mctx.moveTo(px,py);
+          mctx.lineTo(px + TSQ*Math.cos(th)*len, py + Math.sin(th)*len); mctx.stroke();
+        }
+      }
+      mctx.restore();
+    }
+
+    // emitter: embedded in coating at (xQD, radial depth)
+    const qx = qg.xQD + qg.rQD*TSQ*Math.cos(qdTheta);
+    const qy = CY + qg.rQD*Math.sin(qdTheta);
+
+    // circulating light path: highlighted orbit at the coupling interface
+    mctx.save();
+    mctx.beginPath(); mctx.ellipse(qg.xQD, CY, qg.rCoat*TSQ, qg.rCoat, 0, 0, Math.PI*2);
+    mctx.strokeStyle = `rgba(${mc},0.55)`; mctx.lineWidth = 1.2; mctx.setLineDash([5,4]); mctx.stroke();
+    mctx.setLineDash([]);
+    mctx.restore();
+
+    // stage-1 input axis: quantum source → coupling interface, with coupling arrow
+    const arr = arrivalPoint(qg);
+    mctx.save();
+    mctx.strokeStyle = 'rgba(217,139,122,0.95)'; mctx.lineWidth = 1.4; mctx.setLineDash([4,4]);
+    mctx.beginPath(); mctx.moveTo(SRC_X1, CY); mctx.lineTo(arr.x-6, CY); mctx.stroke();
+    mctx.setLineDash([]);
+    mctx.fillStyle = 'rgba(217,139,122,0.95)';
+    mctx.beginPath(); mctx.moveTo(arr.x, CY); mctx.lineTo(arr.x-7, CY-4); mctx.lineTo(arr.x-7, CY+4); mctx.closePath(); mctx.fill();
+    // curved coupling arrow into the orbit
+    mctx.strokeStyle = `rgba(${mc},0.9)`; mctx.lineWidth = 1.3;
+    mctx.beginPath(); mctx.moveTo(arr.x-44, CY-40); mctx.quadraticCurveTo(arr.x-6, CY-34, arr.x+2, CY-4); mctx.stroke();
+    mctx.beginPath(); mctx.moveTo(arr.x+2, CY-4); mctx.lineTo(arr.x-4, CY-9); mctx.moveTo(arr.x+2, CY-4); mctx.lineTo(arr.x+5, CY-10); mctx.stroke();
+    mctx.restore();
+
+    // quantum source block: pump pulse glyph + emission point
+    mctx.save();
+    mctx.font = '9px ui-monospace, monospace'; mctx.fillStyle = '#3D4247'; mctx.textAlign = 'center';
+    const pumpColor = wavelengthToRGB(state.lqd-100);
+    mctx.strokeStyle = pumpColor; mctx.lineWidth = 1.4;
+    mctx.beginPath();
+    const px0 = 32, pw = 76, py0 = 300, ph = 18;
+    mctx.moveTo(px0, py0);
+    for(const f of [0.12, 0.2, 0.34, 0.42, 0.58, 0.66]){ mctx.lineTo(px0+pw*f, py0); mctx.lineTo(px0+pw*f, py0-ph); mctx.lineTo(px0+pw*(f+0.04), py0-ph); mctx.lineTo(px0+pw*(f+0.04), py0); }
+    mctx.lineTo(px0+pw, py0);
+    mctx.stroke();
+    if(pulseFlash>0.02){
+      const sg = mctx.createRadialGradient(SRC_X1, CY, 0, SRC_X1, CY, 16);
+      sg.addColorStop(0, `rgba(217,139,122,${0.7*pulseFlash})`); sg.addColorStop(1, 'rgba(217,139,122,0)');
+      mctx.fillStyle = sg; mctx.beginPath(); mctx.arc(SRC_X1, CY, 16, 0, Math.PI*2); mctx.fill();
+    }
+    mctx.restore();
+
+    mctx.save();
+    const haloR = 5+20*phys.overlap*energyNorm;
+    const cg = mctx.createRadialGradient(qx,qy,0,qx,qy,haloR);
+    cg.addColorStop(0, `rgba(${mc},${0.55*phys.overlap})`);
+    cg.addColorStop(1, 'rgba(0,0,0,0)');
+    mctx.fillStyle=cg; mctx.beginPath(); mctx.arc(qx,qy,haloR,0,Math.PI*2); mctx.fill();
+    mctx.restore();
+
+    mctx.save();
+    const flash = 3+phys.P_exc*7;
+    const qgl = mctx.createRadialGradient(qx,qy,0,qx,qy,flash*3);
+    qgl.addColorStop(0, `rgba(122,63,160,${0.5*phys.P_exc})`);
+    qgl.addColorStop(1, 'rgba(122,63,160,0)');
+    mctx.fillStyle=qgl; mctx.beginPath(); mctx.arc(qx,qy,flash*3,0,Math.PI*2); mctx.fill();
+    mctx.restore();
+
+    mctx.save();
+    mctx.fillStyle = '#7A3FA0';
+    mctx.beginPath(); mctx.arc(qx,qy,3.5+2.5*phys.overlap,0,Math.PI*2); mctx.fill();
+    mctx.strokeStyle='#fff'; mctx.lineWidth=1; mctx.stroke();
+
+    let dx, dy;
+    if(state.dip==='r'){ dx=TSQ*Math.cos(qdTheta); dy=Math.sin(qdTheta); }
+    else if(state.dip==='t'){ dx=-TSQ*Math.sin(qdTheta); dy=Math.cos(qdTheta); }
+    else { dx=1; dy=0; }
+    const dn = Math.hypot(dx,dy); dx/=dn; dy/=dn;
+    const dl=14;
+    mctx.strokeStyle='#7A3FA0'; mctx.lineWidth=1.6;
+    mctx.beginPath(); mctx.moveTo(qx-dx*dl/2,qy-dy*dl/2); mctx.lineTo(qx+dx*dl/2,qy+dy*dl/2); mctx.stroke();
+    mctx.restore();
+
+
+    // collection & detection block at the fiber exit
+    mctx.save();
+    mctx.font='9px ui-monospace, monospace'; mctx.fillStyle='#3D4247'; mctx.textAlign='center';
+    mctx.fillStyle = '#2F3A36';
+    mctx.fillRect(DET_X-6, CY-16, 12, 32);
+    mctx.fillStyle = '#3D4247';
+    if(detFlash>0.02){
+      const dg = mctx.createRadialGradient(DET_X, CY, 0, DET_X, CY, 26);
+      dg.addColorStop(0, `rgba(255,23,23,${0.6*detFlash})`); dg.addColorStop(1, 'rgba(255,23,23,0)');
+      mctx.fillStyle = dg; mctx.beginPath(); mctx.arc(DET_X, CY, 26, 0, Math.PI*2); mctx.fill();
+    }
+    mctx.restore();
+
+    // photons
+    const PHOTON_RED = '255,23,23';
+    for(const p of particles){
+      mctx.save();
+      mctx.globalAlpha = Math.max(0,p.alpha);
+      const py = p.y!==undefined ? p.y : CY;
+      const glowR = p.kind==='circulating' ? 5 : 4.5;
+      const glow = mctx.createRadialGradient(p.x,py,0,p.x,py,glowR);
+      glow.addColorStop(0, `rgba(${PHOTON_RED},0.55)`);
+      glow.addColorStop(1, `rgba(${PHOTON_RED},0)`);
+      mctx.fillStyle = glow;
+      mctx.beginPath(); mctx.arc(p.x, py, glowR, 0, Math.PI*2); mctx.fill();
+
+      if(p.kind==='circulating'){
+        mctx.strokeStyle = `rgba(${PHOTON_RED},1)`;
+        mctx.lineWidth = 1.4;
+        mctx.beginPath(); mctx.arc(p.x, py, 2, 0, Math.PI*2); mctx.stroke();
+      } else if(p.kind==='absorbed'){
+        mctx.strokeStyle = `rgba(${PHOTON_RED},1)`; mctx.lineWidth = 1.4;
+        mctx.beginPath(); mctx.arc(p.x, py, 2+8*p.t/0.25, 0, Math.PI*2); mctx.stroke();
+      } else if(p.kind==='lost'){
+        mctx.fillStyle = `rgba(${PHOTON_RED},0.5)`;
+        mctx.beginPath(); mctx.arc(p.x, py, 1.4, 0, Math.PI*2); mctx.fill();
+      } else {
+        mctx.fillStyle = `rgba(${PHOTON_RED},1)`;
+        mctx.beginPath(); mctx.arc(p.x, py, 1.9, 0, Math.PI*2); mctx.fill();
+      }
+      mctx.restore();
+    }
+
+    // TIR reflection flashes
+    for(const s of sparks){
+      const a = 1 - s.t/0.25;
+      mctx.save();
+      mctx.strokeStyle = `rgba(${mc},${0.9*a})`; mctx.lineWidth = 1.2;
+      mctx.beginPath(); mctx.arc(s.x, s.y, 2+7*s.t/0.25, 0, Math.PI*2); mctx.stroke();
+      mctx.restore();
+    }
+
+    drawInset(phys);
+
+    // labels
+    const topR = rCoatAt(CX);
+  }
+
+  // curved arrow from (x0,y0) through control (cx,cy) to (x1,y1), with head
+  function curvedArrow(x0,y0,cx,cy,x1,y1){
+    mctx.beginPath(); mctx.moveTo(x0,y0); mctx.quadraticCurveTo(cx,cy,x1,y1); mctx.stroke();
+    const ang = Math.atan2(y1-cy, x1-cx);
+    mctx.beginPath();
+    mctx.moveTo(x1,y1); mctx.lineTo(x1-6*Math.cos(ang-0.4), y1-6*Math.sin(ang-0.4));
+    mctx.moveTo(x1,y1); mctx.lineTo(x1-6*Math.cos(ang+0.4), y1-6*Math.sin(ang+0.4));
+    mctx.stroke();
+  }
+
+  // coupling inset ("WGM COUPLING" callout): emitter in coating, branches into TIR chords
+  function drawInset(phys){
+    const IX = 200, IY = 130, IR = 70;             // inset circle
+    const CCx = IX+40, Rb = 50, bandW = 12, Rcore = Rb-bandW;   // schematic boundary, locally curved
+    const mc = modeRGB();
+    const vtx = k => { const psi = Math.PI + k*2*Math.PI/N_BOUNCE; return {x: CCx+Rb*Math.cos(psi), y: IY+Rb*Math.sin(psi), psi}; };
+    const A = vtx(-1), B = vtx(0), C = vtx(1);
+    const incDeg = 90 - 360/N_BOUNCE/2;             // θi = π/2 − π/N
+    const critDeg = Math.asin(N_AMB/state.ncoat)*180/Math.PI;
+
+    mctx.save();
+    mctx.beginPath(); mctx.arc(IX,IY,IR,0,Math.PI*2); mctx.fillStyle='#FFFFFF'; mctx.fill(); mctx.clip();
+    mctx.beginPath(); mctx.arc(CCx,IY,Rb,0,Math.PI*2); mctx.fillStyle='#E4F3F7'; mctx.fill();   // coating (cyan)
+    mctx.beginPath(); mctx.arc(CCx,IY,Rcore,0,Math.PI*2); mctx.fillStyle='#E9ECF1'; mctx.fill(); // fiber core
+    mctx.beginPath(); mctx.arc(CCx,IY,Rb,0,Math.PI*2); mctx.strokeStyle='#1A1D21'; mctx.lineWidth=1.2; mctx.stroke();
+
+    // TIR chord path
+    mctx.lineCap='round'; mctx.lineJoin='round';
+    mctx.beginPath(); mctx.moveTo(A.x,A.y); mctx.lineTo(B.x,B.y); mctx.lineTo(C.x,C.y);
+    mctx.strokeStyle=`rgba(${mc},0.95)`; mctx.lineWidth=1.8; mctx.stroke();
+
+    // outward normals at each bounce point (dashed)
+    mctx.setLineDash([2,2]); mctx.strokeStyle='rgba(90,96,103,0.9)'; mctx.lineWidth=0.9;
+    for(const V of [A,B,C]){
+      mctx.beginPath(); mctx.moveTo(V.x,V.y); mctx.lineTo(V.x+Math.cos(V.psi)*14, V.y+Math.sin(V.psi)*14); mctx.stroke();
+    }
+    mctx.setLineDash([]);
+
+    // reflected ray at B: incoming chord mirrored about the normal (grazing = 90° − θi)
+    const ux = (B.x-A.x), uy = (B.y-A.y), ul = Math.hypot(ux,uy);
+    const nx = Math.cos(B.psi), ny = Math.sin(B.psi);
+    const dot = (ux/ul)*nx + (uy/ul)*ny;
+    const rx = ux/ul - 2*dot*nx, ry = uy/ul - 2*dot*ny;
+    mctx.setLineDash([3,3]); mctx.strokeStyle=`rgba(${mc},0.7)`; mctx.lineWidth=1;
+    mctx.beginPath(); mctx.moveTo(B.x,B.y); mctx.lineTo(B.x+rx*22, B.y+ry*22); mctx.stroke();
+    mctx.setLineDash([]);
+
+    // emitter inside coating evanescent layer, branches into the chord path
+    const E = {x: CCx-(Rb-6), y: IY};
+    mctx.strokeStyle=`rgba(${mc},0.9)`; mctx.lineWidth=1.2;
+    curvedArrow(E.x+3, E.y-3, E.x+14, E.y-22, A.x-2, A.y+2);
+    curvedArrow(E.x+3, E.y+3, E.x+14, E.y+22, C.x-2, C.y-2);
+    mctx.beginPath(); mctx.arc(E.x,E.y,4,0,Math.PI*2); mctx.fillStyle='#7A3FA0'; mctx.fill();
+    mctx.strokeStyle='#fff'; mctx.lineWidth=1; mctx.stroke();
+
+    mctx.restore();
+
+    // highlighted callout border
+    mctx.save();
+    mctx.beginPath(); mctx.arc(IX,IY,IR,0,Math.PI*2);
+    mctx.strokeStyle=`rgba(${mc},1)`; mctx.lineWidth=2.4; mctx.stroke();
+    mctx.restore();
+
+  }
+
+  /* ===================== AXIAL VIEW (fiber transverse cross-section) ===================== */
+  function drawAxial(phys){
+    mctx.clearRect(0,0,W,H);
+    const energyNorm = Math.min(1, fieldEnergy/6);
+    const mc = modeRGB();
+    const rCore = state.R*PX_PER_UM;
+    const rCoat = (state.R + state.tcoat)*PX_PER_UM;
+    const tPx = state.tcoat*PX_PER_UM;
+    // evanescent tail, drawn ×20 of the physical decay length so it is visible
+    const evanPx = Math.max(4, Math.min(30, phys.delta/1000*PX_PER_UM*20));
+
+    // evanescent halo outside the coating
+    mctx.save();
+    const gO = mctx.createRadialGradient(CX,CY,rCoat-2,CX,CY,rCoat+evanPx);
+    gO.addColorStop(0, `rgba(${mc},${0.35*energyNorm})`);
+    gO.addColorStop(1, 'rgba(0,0,0,0)');
+    mctx.fillStyle = gO;
+    mctx.beginPath(); mctx.arc(CX,CY,rCoat+evanPx,0,Math.PI*2); mctx.fill();
+    mctx.restore();
+
+    // coating and core
+    mctx.save();
+    mctx.beginPath(); mctx.arc(CX,CY,rCoat,0,Math.PI*2);
+    mctx.fillStyle='#F4F6FB'; mctx.fill(); mctx.strokeStyle='#1A1D21'; mctx.lineWidth=1.3; mctx.stroke();
+    mctx.beginPath(); mctx.arc(CX,CY,rCore,0,Math.PI*2);
+    mctx.fillStyle='#E9ECF1'; mctx.fill(); mctx.strokeStyle='#5B6067'; mctx.lineWidth=1; mctx.stroke();
+    mctx.restore();
+
+    // TIR ray view: polygon inscribed in the coating annulus (chords kept above the core radius)
+    if(state.rayView){
+      const Nax = 12;
+      const rv = rCoat - 1.5;
+      mctx.save();
+      mctx.beginPath();
+      for(let k=0;k<=Nax;k++){
+        const th = k*2*Math.PI/Nax;
+        const px = CX + rv*Math.cos(th), py = CY + rv*Math.sin(th);
+        if(k===0) mctx.moveTo(px,py); else mctx.lineTo(px,py);
+      }
+      mctx.strokeStyle = `rgba(${mc},${0.25+0.6*energyNorm})`; mctx.lineWidth = 1.4; mctx.stroke();
+      // bounce points on the surface with inward chord normals
+      for(let k=0;k<Nax;k++){
+        const th = k*2*Math.PI/Nax;
+        const px = CX + rv*Math.cos(th), py = CY + rv*Math.sin(th);
+        mctx.beginPath(); mctx.arc(px,py,1.8,0,Math.PI*2);
+        mctx.fillStyle = `rgba(${mc},${0.4+0.5*energyNorm})`; mctx.fill();
+      }
+      mctx.restore();
+    }
+
+    // radial intensity: Airy-envelope near the turning point, cos² radial nodes inside the coating
+    const nR = 48;
+    mctx.save();
+    for(let j=0;j<nR;j++){
+      const r = rCore + (j/(nR-1))*(rCoat+evanPx-rCore);
+      let I;
+      if(r<=rCoat){
+        const d = rCoat - r;                                   // depth below surface, px
+        const env = Math.exp(-d/(0.5*tPx+1));
+        const node = Math.pow(Math.cos(Math.PI*state.q*d/(2*tPx+1e-6)), 2);
+        I = env*node;
+      } else {
+        I = Math.exp(-(r-rCoat)/Math.max(evanPx/3,1));
+      }
+      mctx.beginPath(); mctx.arc(CX,CY,r,0,Math.PI*2);
+      mctx.strokeStyle = `rgba(${mc},${0.04+0.6*I*energyNorm})`;
+      mctx.lineWidth = 1.2+2*I;
+      mctx.stroke();
+    }
+    mctx.restore();
+
+    // emitter at radial depth, azimuth φ
+    const qdTheta = state.qdPhi*Math.PI/180;
+    const rQD = rCoat - state.qdR*tPx;
+    const qx = CX + rQD*Math.cos(qdTheta), qy = CY + rQD*Math.sin(qdTheta);
+    mctx.save();
+    mctx.fillStyle='#7A3FA0'; mctx.beginPath(); mctx.arc(qx,qy,4.5,0,Math.PI*2); mctx.fill();
+    mctx.strokeStyle='#fff'; mctx.lineWidth=1; mctx.stroke(); mctx.restore();
+
+  }
+
+  /* ===================== SPECTRUM: T(λ), emitter envelope, comb I_cav / I_det ===================== */
+  // deterministic pseudo-random in [0,1): keeps peak heights and asymmetry stable between frames
+  function hash01(x){ const s = Math.sin(x*12.9898 + 78.233)*43758.5453; return s - Math.floor(s); }
+
+  // experimental collection/gain profile: skewed Gaussian over the window, with a floor
+  function gainProfile(lam, lo, hi){
+    const span = hi-lo, mu = lo + 0.45*span;
+    const sig = lam < mu ? 0.3*span : 0.45*span;
+    return 0.25 + 0.75*Math.exp(-0.5*Math.pow((lam-mu)/sig, 2));
+  }
+  // background scattering floor (deterministic ripple)
+  function bgFloor(lam, lo){
+    const x = lam-lo;
+    return 0.012*(1 + 0.6*Math.sin(2.3*x) + 0.4*Math.sin(7.1*x+1));
+  }
+
+  // comb data built once per physics update; pw = plot width in px
+  let specData = null;
+  function buildSpec(phys, pw){
+    const lo = phys.wmin, hi = phys.wmax;
+    const n = pw+1;
+    const T = new Float64Array(n), Ic = new Float64Array(n), Id = new Float64Array(n), Iq = new Float64Array(n);
+    const modes = phys.specModes;
+    for(let i=0;i<n;i++){
+      const lam = lo + (i/pw)*(hi-lo);
+      let sT=0, sC=0, sD=0;
+      for(const md of modes){
+        const d = lam-md.lam;
+        if(Math.abs(d) > 40*md.hw) continue;
+        const h2 = md.hw*md.hw;
+        // asymmetric Lorentzian (skewed by md.asym)
+        const L = h2/(d*d+h2) * (1 + md.asym*d/(Math.abs(d)+3*md.hw));
+        sT += md.T0*L; sC += md.amp*L; sD += md.det*L;
+      }
+      const env = emitterEnv(lam, phys.lqd), g = gainProfile(lam, lo, hi), bg = bgFloor(lam, lo);
+      T[i]  = 1 - sT;                                       // classical probe transmission (right axis)
+      Iq[i] = env*g + bg;                                   // broad emitter envelope
+      Ic[i] = ((1-phys.beta)*env + sC)*g + bg;              // envelope + Purcell-enhanced comb
+      Id[i] = sD*g + 0.5*bg;                                // fiber-extracted, collected
+    }
+    // auto-scale counts so the tallest comb trace sits near full scale
+    let mx = 1e-12; for(let i=0;i<n;i++) if(Ic[i]>mx) mx = Ic[i];
+    const S = 0.9*SPEC_YMAX/mx;
+    for(let i=0;i<n;i++){ Ic[i]*=S; Id[i]*=S; Iq[i]*=S; }
+
+    // dominant local maxima of the combined intensity → (q, m) pointers
+    const peaks = [];
+    for(let i=1;i<n-1;i++){
+      if(Ic[i]>Ic[i-1] && Ic[i]>=Ic[i+1] && Ic[i] > 0.12*SPEC_YMAX) peaks.push({i, v:Ic[i], lam: lo+(i/pw)*(hi-lo)});
+    }
+    peaks.sort((a,b)=>b.v-a.v);
+    const kept = [];
+    for(const pk of peaks){
+      if(kept.length>=14) break;
+      if(kept.some(k=>Math.abs(k.i-pk.i)<46)) continue;
+      kept.push(pk);
+    }
+    for(const pk of kept){
+      // label = mode contributing most intensity at this peak
+      let best = null, bestC = -1;
+      for(const md of modes){
+        const d = pk.lam-md.lam, h2 = md.hw*md.hw;
+        const c = md.amp*h2/(d*d+h2);
+        if(c > bestC){ bestC = c; best = md; }
+      }
+      pk.label = best ? `(${best.q}, ${best.m})` : '';
+    }
+    return {phys, pw, T, Ic, Id, Iq, peaks: kept};
+  }
+
+  function drawSpectrum(phys){
+    const w = specCanvas.width, h = specCanvas.height;
+    sctx.clearRect(0,0,w,h);
+    const ML = 74, MR = 64, pT = 26, pB = h-44;     // plot margins (left: counts, right: T)
+    const pw = w-ML-MR, ph = pB-pT;
+    const lo = phys.wmin, hi = phys.wmax;
+    const xOf = lam => ML + ((lam-lo)/(hi-lo))*pw;
+    const yC = v => pB - Math.max(0,Math.min(SPEC_YMAX,v))/SPEC_YMAX*ph;   // intensity, a.u.
+    const yT = t => pB - Math.max(0,Math.min(1,t))*ph;                     // transmission
+
+    if(!specData || specData.phys!==phys || specData.pw!==pw) specData = buildSpec(phys, pw);
+
+    sctx.save();
+    // graduations
+    sctx.strokeStyle = 'rgba(20,23,26,0.07)'; sctx.lineWidth = 1;
+    for(const v of [5000,10000,15000]){ const y=yC(v); sctx.beginPath(); sctx.moveTo(ML,y); sctx.lineTo(w-MR,y); sctx.stroke(); }
+    // axes
+    sctx.strokeStyle = 'rgba(20,23,26,0.5)'; sctx.lineWidth = 1.2;
+    sctx.beginPath(); sctx.moveTo(ML,pT); sctx.lineTo(ML,pB); sctx.lineTo(w-MR,pB); sctx.lineTo(w-MR,pT); sctx.stroke();
+    // intensity ticks (left)
+    sctx.font = '16px ui-monospace, monospace'; sctx.fillStyle = '#3D4247';
+    sctx.textAlign = 'right';
+    for(const v of [0,5000,10000,15000]){
+      sctx.beginPath(); sctx.moveTo(ML-4,yC(v)); sctx.lineTo(ML,yC(v)); sctx.stroke();
+      sctx.fillText(v.toLocaleString('en-US'), ML-8, yC(v)+6);
+    }
+    // transmission ticks (right)
+    sctx.textAlign = 'left';
+    for(const t of [0,0.5,1]){
+      sctx.beginPath(); sctx.moveTo(w-MR,yT(t)); sctx.lineTo(w-MR+4,yT(t)); sctx.stroke();
+      sctx.fillText(t.toFixed(1), w-MR+8, yT(t)+6);
+    }
+    // wavelength ticks
+    const span = hi-lo, step = span<=20 ? 2 : span<=40 ? 5 : span<=100 ? 10 : 20;
+    sctx.textAlign = 'center';
+    for(let nm=Math.ceil(lo/step)*step; nm<=hi; nm+=step){
+      const x = xOf(nm);
+      sctx.beginPath(); sctx.moveTo(x,pB); sctx.lineTo(x,pB+5); sctx.stroke();
+      sctx.fillText(String(nm), x, pB+22);
+    }
+    // axis titles
+    sctx.fillText('Wavelength (nm)', ML + pw/2, h-4);
+    sctx.save(); sctx.translate(18, (pT+pB)/2); sctx.rotate(-Math.PI/2); sctx.fillText('Intensity (a.u.)', 0, 0); sctx.restore();
+    sctx.save(); sctx.translate(w-14, (pT+pB)/2); sctx.rotate(Math.PI/2); sctx.fillText('T(λ)', 0, 0); sctx.restore();
+    sctx.restore();
+
+    function trace(arr, yf, color, lw){
+      sctx.save();
+      sctx.shadowColor = color; sctx.shadowBlur = 3;
+      sctx.beginPath();
+      for(let i=0;i<arr.length;i++){ const x=ML+i, y=yf(arr[i]); if(i===0) sctx.moveTo(x,y); else sctx.lineTo(x,y); }
+      sctx.strokeStyle = color; sctx.lineWidth = lw; sctx.lineJoin = 'round'; sctx.stroke();
+      sctx.restore();
+    }
+    function fillTrace(arr, yf, stroke, fill){
+      sctx.save();
+      sctx.beginPath(); sctx.moveTo(ML,pB);
+      for(let i=0;i<arr.length;i++) sctx.lineTo(ML+i, yf(arr[i]));
+      sctx.lineTo(w-MR,pB); sctx.closePath();
+      sctx.fillStyle = fill; sctx.fill();
+      sctx.strokeStyle = stroke; sctx.lineWidth = 1.6; sctx.lineJoin = 'round'; sctx.stroke();
+      sctx.restore();
+    }
+
+    if(state.traces.Iqd)  fillTrace(specData.Iq, yC, '#7A3FA0', 'rgba(122,63,160,0.14)');
+    if(state.traces.T)    trace(specData.T, yT, state.mode==='TE' ? '#2F4FE0' : '#C1652E', 2.0);
+    if(state.traces.Icav) trace(specData.Ic, yC, '#1F8A5C', 2.2);
+    if(state.traces.Idet) trace(specData.Id, yC, '#B23A3A', 2.0);
+
+    // QD and selected-resonance markers
+    sctx.save();
+    sctx.setLineDash([5,4]); sctx.lineWidth = 1.4;
+    const xq = xOf(state.lqd), xc = xOf(phys.lambda_cav);
+    if(state.lqd>=lo && state.lqd<=hi){
+      sctx.strokeStyle = 'rgba(122,63,160,0.55)'; sctx.beginPath(); sctx.moveTo(xq,pT); sctx.lineTo(xq,pB); sctx.stroke();
+    }
+    sctx.strokeStyle = state.mode==='TE' ? 'rgba(47,79,224,0.55)' : 'rgba(193,101,46,0.55)';
+    sctx.beginPath(); sctx.moveTo(xc,pT); sctx.lineTo(xc,pB); sctx.stroke();
+    sctx.restore();
+
+    // (q, m) pointer ticks over dominant peaks
+    sctx.save();
+    sctx.font = '15px ui-monospace, monospace'; sctx.textAlign = 'center';
+    for(const pk of specData.peaks){
+      const x = ML + pk.i, yTop = yC(pk.v);
+      sctx.strokeStyle = '#3D4247'; sctx.lineWidth = 1;
+      sctx.beginPath(); sctx.moveTo(x,yTop-4); sctx.lineTo(x,yTop-16); sctx.stroke();
+      sctx.fillStyle = '#3D4247';
+      sctx.fillText(pk.label, x, Math.max(pT+12, yTop-20));
+    }
+    sctx.font = '17px ui-monospace, monospace';
+    if(state.lqd>=lo && state.lqd<=hi){ sctx.textAlign='center'; sctx.fillStyle='#7A3FA0'; sctx.fillText('λQD', xq, pT+14); }
+    sctx.textAlign = 'center'; sctx.fillStyle = state.mode==='TE' ? '#2F4FE0' : '#C1652E'; sctx.fillText('λres', xc, pB-6);
+    sctx.restore();
+  }
+
+  /* ===================== SIGNAL-CHAIN STRIP ===================== */
+  function updateChain(phys){
+    const bar = document.getElementById('chainBar');
+    const stages = [
+      {label:'Pump', val: fmt(phys.pump_uW,1)+' µW'},
+      {label:'Excitation', val: (phys.P_exc*100).toFixed(1)+'%'},
+      {label:'Spont. emission', val: fmtSci(phys.R_qd_total)+' s⁻¹'},
+      {label:'Spectral overlap', val: (phys.S_spec*100).toFixed(1)+'%'},
+      {label:'Spatial/mode overlap', val: (phys.overlap*100).toFixed(1)+'%'},
+      {label:'Into cavity', val: fmtSci(phys.rate_into_cavity)+' s⁻¹'},
+      {label:'Fiber out-coupling', val: fmtSci(phys.rate_fiber)+' s⁻¹'},
+      {label:'Collection η', val: (phys.eta_collect*100).toFixed(0)+'%'},
+      {label:'Detector', val: fmtSci(phys.rate_collected)+' s⁻¹'},
+    ];
+    bar.innerHTML = stages.map(st=>`<div class="chain-stage"><div class="chain-label">${st.label}</div><div class="chain-val">${st.val}</div></div>`).join('');
+  }
+
+  /* ===================== REFERENCE / Δ-MEASUREMENT ===================== */
+  function captureReference(){
+    state.reference = Object.assign({}, physCache);
+    document.getElementById('refStatus').textContent = 'reference captured';
+    document.getElementById('deltaPanel').style.display = 'block';
+    updateDelta(physCache);
+  }
+  function clearReference(){
+    state.reference = null;
+    document.getElementById('refStatus').textContent = 'no reference set';
+    document.getElementById('deltaPanel').style.display = 'none';
+  }
+  function updateDelta(phys){
+    if(!state.reference) return;
+    const ref = state.reference;
+    const rows = [
+      {label:'λ_res', cur: phys.lambda_cav, ref: ref.lambda_cav, unit:' nm', d:3},
+      {label:'FSR', cur: phys.FSR, ref: ref.FSR, unit:' nm', d:3},
+      {label:'Linewidth', cur: phys.linewidth_nm, ref: ref.linewidth_nm, unit:' nm', d:5},
+      {label:'Q_loaded', cur: phys.Q_total, ref: ref.Q_total, sci:true},
+      {label:'Q_i', cur: phys.Q_i, ref: ref.Q_i, sci:true},
+      {label:'Q_e', cur: phys.Q_e, ref: ref.Q_e, sci:true},
+      {label:'g/2π', cur: phys.g/(2*Math.PI*1e9), ref: ref.g/(2*Math.PI*1e9), unit:' GHz', d:3},
+      {label:'Purcell F_P', cur: phys.Fp, ref: ref.Fp, d:3},
+      {label:'Detuning', cur: phys.detuning_nm, ref: ref.detuning_nm, unit:' nm', d:3},
+      {label:'Detected rate', cur: phys.rate_collected, ref: ref.rate_collected, unit:' s⁻¹', sci:true},
+    ];
+    const grid = document.getElementById('deltaGrid');
+    grid.innerHTML = rows.map(r=>{
+      const delta = r.cur-r.ref;
+      const sign = delta>=0?'+':'';
+      const curStr = r.sci? fmtSci(r.cur) : fmt(r.cur,r.d)+(r.unit||'');
+      const deltaStr = r.sci? sign+fmtSci(delta) : sign+fmt(delta,r.d)+(r.unit||'');
+      return `<div class="stat"><div class="stat-label">${r.label}</div><div class="stat-val">${curStr}</div><div class="stat-sub">Δ ${deltaStr}</div></div>`;
+    }).join('');
+  }
+
+  /* ===================== READOUT PANEL ===================== */
+  function updateReadout(phys){
+    document.getElementById('s-lcav').textContent = fmt(phys.lambda_cav,3)+' nm';
+    document.getElementById('s-detune').textContent = `Δλ = ${(phys.detuning_nm>=0?'+':'')}${fmt(phys.detuning_nm,3)} nm`;
+    document.getElementById('s-mql').textContent = `m=${phys.m}, q=${phys.q}, l=${phys.l}`;
+    document.getElementById('s-qtot').textContent = fmtSci(phys.Q_total);
+    document.getElementById('s-qbreak').textContent = `Q_si ${fmtSci(phys.Q_si)} · Q_poly ${fmtSci(phys.Q_poly)} · Q_scat ${fmtSci(phys.Q_scat)} · Q_rad ${fmtSci(phys.Q_rad)}`;
+    document.getElementById('s-veff').textContent = fmt(phys.V_eff_um3,1)+' µm³';
+
+    document.getElementById('s-kappa').textContent = fmtSci(phys.kappa_total/(2*Math.PI*1e9))+' GHz';
+    document.getElementById('s-kappaie').textContent = `κ_i ${fmtSci(phys.kappa_i/(2*Math.PI*1e9))} · κ_e ${fmtSci(phys.kappa_e/(2*Math.PI*1e9))} GHz`;
+    document.getElementById('s-gamma').textContent = fmtSci(phys.gamma/(2*Math.PI*1e9))+' GHz';
+    document.getElementById('s-g').textContent = fmtSci(phys.g/(2*Math.PI*1e9))+' GHz';
+    document.getElementById('s-overlap').textContent = `overlap ${fmt(phys.overlap,3)} (r${fmt(phys.S_r,2)}·z${fmt(phys.S_z,2)}·φ${fmt(phys.S_phi,2)}·evan${fmt(phys.S_evan,2)})`;
+    document.getElementById('s-fp').textContent = fmt(phys.Fp,3)+`  (max ${fmt(phys.Fp_max,1)})`;
+
+    document.getElementById('s-eta').textContent = (phys.eta_e*100).toFixed(1)+'%';
+    document.getElementById('s-cregime').textContent = phys.regime;
+    document.getElementById('s-rate').textContent = fmtSci(phys.rate_collected)+' s⁻¹';
+    document.getElementById('s-fsr').textContent = fmt(phys.FSR,3)+' nm';
+
+    document.getElementById('s-espatial').textContent = fmt(phys.S_spatial,3);
+    // analytic: dλ_res/dn_coat ≈ (λ_res / n_eff) · Γ_coat
+    document.getElementById('s-dlambdadn').textContent = fmt(phys.lambda_cav/phys.n_eff*phys.Gam,3)+' nm/RIU';
+    document.getElementById('s-etacollect').textContent = (phys.eta_collect*100).toFixed(0)+'%';
+
+    els.outn.textContent = phys.n_eff.toFixed(3);
+    els.outqe.textContent = fmtSci(phys.Q_e);
+    els.outpump.textContent = fmt(state.lqd-100,0)+' nm';
+
+    updateChain(phys);
+    if(state.reference) updateDelta(phys);
+  }
+
+  function updateLabels(){
+    els.outR.textContent = state.R.toFixed(1)+' µm';
+    els.outtcoat.textContent = state.tcoat.toFixed(1)+' µm';
+    els.outcurv.textContent = state.curv.toFixed(2)+' µm';
+    els.outdn.textContent = state.ncoat.toFixed(3);
+    els.outq.textContent = 'q='+state.q;
+    els.outl.textContent = 'l='+state.l;
+    els.outlqd.textContent = state.lqd.toFixed(0)+' nm';
+    els.outdlqd.textContent = dlqdFromSlider(state.dlqd_pm).toFixed(2)+' nm';
+    els.outqdr.textContent = state.qdR<0.05 ? 'surface' : state.qdR>0.95 ? 'core' : state.qdR.toFixed(2);
+    els.outqdz.textContent = state.qdZ.toFixed(2);
+    els.outqdphi.textContent = state.qdPhi.toFixed(0)+'°';
+    els.outdsurf.textContent = state.dsurf.toFixed(0)+' nm';
+    els.outtaper.textContent = `τ ${state.taper.toFixed(2)} · gap ${(1000/state.taper).toFixed(0)} nm`;
+    els.outpower.textContent = powerFromSlider(state.power).toFixed(1)+' µW';
+    els.outrough.textContent = state.rough.toFixed(1)+' nm';
+    els.outcollect.textContent = state.collectEff.toFixed(0)+'%';
+    document.getElementById('out-win').textContent = `${state.wmin.toFixed(0)}–${state.wmax.toFixed(0)} nm`;
+  }
+
+  /* ===================== MAIN LOOP ===================== */
+  let lastT = performance.now();
+  let physCache = null;
+
+  function frame(t){
+    const dt = Math.min(0.05, (t-lastT)/1000);
+    lastT = t;
+
+    stepFieldEnergy(dt, physCache);
+    updateParticles(dt, physCache);
+
+    if(state.view==='iso') drawIso(physCache); else drawAxial(physCache);
+    drawSpectrum(physCache);
+
+    requestAnimationFrame(frame);
+  }
+
+  function refreshPhysics(){
+    updateLabels();
+    physCache = computePhysics(state);
+    updateReadout(physCache);
+  }
+
+  /* ===================== EVENT WIRING ===================== */
+  function bind(k, key, parse){
+    els[k].addEventListener('input', e=>{ state[key]=parse(e.target.value); refreshPhysics(); });
+  }
+  bind('R','R',parseFloat);
+  bind('tcoat','tcoat',parseFloat);
+  bind('curv','curv',parseFloat);
+  bind('dn','ncoat',parseFloat);
+  bind('q','q',v=>parseInt(v,10));
+  bind('l','l',v=>parseInt(v,10));
+  bind('lqd','lqd',parseFloat);
+  bind('dlqd','dlqd_pm',parseFloat);
+  bind('qdr','qdR',parseFloat);
+  bind('qdz','qdZ',parseFloat);
+  bind('qdphi','qdPhi',parseFloat);
+  bind('dsurf','dsurf',parseFloat);
+  bind('taper','taper',parseFloat);
+  bind('power','power',parseFloat);
+  bind('rough','rough',parseFloat);
+  bind('collect','collectEff',parseFloat);
+
+  chips.te.addEventListener('click', ()=>{ state.mode='TE'; chips.te.classList.add('active'); chips.tm.classList.remove('active'); refreshPhysics(); });
+  chips.tm.addEventListener('click', ()=>{ state.mode='TM'; chips.tm.classList.add('active'); chips.te.classList.remove('active'); refreshPhysics(); });
+  chips.dipR.addEventListener('click', ()=>{ state.dip='r'; [chips.dipR,chips.dipT,chips.dipZ].forEach(c=>c.classList.remove('active')); chips.dipR.classList.add('active'); refreshPhysics(); });
+  chips.dipT.addEventListener('click', ()=>{ state.dip='t'; [chips.dipR,chips.dipT,chips.dipZ].forEach(c=>c.classList.remove('active')); chips.dipT.classList.add('active'); refreshPhysics(); });
+  chips.dipZ.addEventListener('click', ()=>{ state.dip='z'; [chips.dipR,chips.dipT,chips.dipZ].forEach(c=>c.classList.remove('active')); chips.dipZ.classList.add('active'); refreshPhysics(); });
+  chips.viewIso.addEventListener('click', ()=>{ state.view='iso'; chips.viewIso.classList.add('active'); chips.viewSide.classList.remove('active'); });
+  chips.viewSide.addEventListener('click', ()=>{ state.view='side'; chips.viewSide.classList.add('active'); chips.viewIso.classList.remove('active'); });
+
+  document.getElementById('btn-ref-set').addEventListener('click', captureReference);
+  document.getElementById('btn-ref-clear').addEventListener('click', clearReference);
+
+  ['T','Iqd','Icav','Idet'].forEach(key=>{
+    document.getElementById('tg-'+key).addEventListener('change', e=>{ state.traces[key]=e.target.checked; });
+  });
+
+  function wavelengthToRGB(nm){
+    let w = nm, r=0,g=0,b=0,a=1;
+    if(w<380) w=380; if(w>780){ a = Math.max(0.15, 1-(w-780)/500); w=780; }
+    if(w>=380&&w<440){ r=-(w-440)/(440-380); g=0; b=1; }
+    else if(w<490){ r=0; g=(w-440)/(490-440); b=1; }
+    else if(w<510){ r=0; g=1; b=-(w-510)/(510-490); }
+    else if(w<580){ r=(w-510)/(580-510); g=1; b=0; }
+    else if(w<645){ r=1; g=-(w-645)/(645-580); b=0; }
+    else { r=1; g=0; b=0; }
+    let factor = 1;
+    if(w>=380&&w<420) factor = 0.3+0.7*(w-380)/(420-380);
+    else if(w>=645&&w<=780) factor = 0.3+0.7*(780-w)/(780-645);
+    const R = Math.round(255*Math.pow(r*factor,0.8));
+    const G = Math.round(255*Math.pow(g*factor,0.8));
+    const B = Math.round(255*Math.pow(b*factor,0.8));
+    if(nm>780) return `rgba(${Math.max(R,140)},${Math.round(G*0.25)},${Math.round(B*0.25)},${a})`;
+    return `rgba(${R},${G},${B},${a})`;
+  }
+
+  // spectral window: accept only a sane band (≥ 5 nm wide)
+  function bindWindow(id, key){
+    document.getElementById(id).addEventListener('input', e=>{
+      const v = parseFloat(e.target.value);
+      if(!isFinite(v) || v<=0) return;
+      const next = Object.assign({}, state, {[key]: v});
+      if(next.wmax - next.wmin < 5) return;
+      state[key] = v;
+      refreshPhysics();
+    });
+  }
+  bindWindow('in-wmin','wmin');
+  bindWindow('in-wmax','wmax');
+
+  // benchmark presets: window, core radius, axial order, QD line inside the band (approximate)
+  const PRESETS = {
+    a: {wmin:510, wmax:530, R:38, l:1, lqd:520},
+    b: {wmin:890, wmax:915, R:52, l:1, lqd:902},
+    c: {wmin:510, wmax:530, R:38, l:2, lqd:520},
+    d: {wmin:890, wmax:915, R:52, l:2, lqd:902},
+  };
+  function applyPreset(key){
+    const p = PRESETS[key];
+    Object.assign(state, {wmin:p.wmin, wmax:p.wmax, R:p.R, l:p.l, lqd:p.lqd});
+    els.R.value = p.R; els.l.value = p.l; els.lqd.value = p.lqd;
+    document.getElementById('in-wmin').value = p.wmin;
+    document.getElementById('in-wmax').value = p.wmax;
+    document.getElementById('out-preset').textContent = key;
+    refreshPhysics();
+  }
+  ['a','b','c','d'].forEach(k=>document.getElementById('preset-'+k).addEventListener('click', ()=>applyPreset(k)));
+
+  // wave envelope (Airy rings) ↔ TIR ray path
+  const btnRay = document.getElementById('btn-ray');
+  btnRay.addEventListener('click', ()=>{
+    state.rayView = !state.rayView;
+    btnRay.textContent = state.rayView ? 'View: TIR ray path' : 'View: Wave envelope';
+  });
+
+  /* init */
+  refreshPhysics();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
